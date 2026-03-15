@@ -248,7 +248,7 @@ def main():
         except Exception:
             pass
 
-    # ── 10. Export public data for GitHub Pages ───────────────────────────
+    # ── 10. Export public data for GitHub Pages + auto-push ──────────────
     log.info("Step 10/11: Exporting public data for GitHub Pages...")
     try:
         from scripts.export_public_data import export_all
@@ -259,6 +259,43 @@ def main():
         try:
             from alerts.email_alerts import send_alert
             send_alert("[Horizon Ledger] run_weekly Step 10 (public data export) failed", traceback.format_exc())
+        except Exception:
+            pass
+
+    # ── 10b. Git push docs/data/ to GitHub Pages ──────────────────────────
+    log.info("Step 10b: Pushing public data to GitHub Pages...")
+    try:
+        import subprocess
+        from config import BASE_DIR
+        _repo = str(BASE_DIR)
+
+        def _git(*args):
+            return subprocess.run(
+                ["git"] + list(args),
+                cwd=_repo,
+                capture_output=True,
+                text=True,
+            )
+
+        # Stage only the data folder (never commits source code)
+        _git("add", "docs/data/")
+
+        # Check if there's anything new to commit
+        status = _git("status", "--porcelain", "docs/data/")
+        if status.stdout.strip():
+            _git("commit", "-m", f"Weekly data update {today}")
+            push_result = _git("push")
+            if push_result.returncode == 0:
+                log.info("  → GitHub Pages data pushed successfully")
+            else:
+                log.error("  → Git push failed: %s", push_result.stderr.strip())
+        else:
+            log.info("  → No data changes to push")
+    except Exception as e:
+        log.error("GitHub Pages push failed: %s", e)
+        try:
+            from alerts.email_alerts import send_alert
+            send_alert("[Horizon Ledger] run_weekly Step 10b (git push) failed", traceback.format_exc())
         except Exception:
             pass
 
