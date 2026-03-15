@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizon Ledger — Independent Investment Research</title>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">Horizon <span>Ledger</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html" class="active">Home</a></li>
+    <li><a href="conservative.html">Conservative</a></li>
+    <li><a href="aggressive.html">Aggressive</a></li>
+    <li><a href="about.html">Methodology</a></li>
+  </ul>
+</nav>
+
+<div class="hero">
+  <h1>Horizon Ledger</h1>
+  <p>Independent, systematic investment research powered by public data. Two factor-model indexes tracked in real time.</p>
+  <div class="disclaimer">&#9888; Not financial advice — educational research only</div>
+</div>
+
+<div class="container">
+
+  <!-- Market Pulse Section -->
+  <div class="section">
+    <div class="section-title">Market <span>Pulse</span></div>
+    <div id="pulse-loading" class="loading">Loading market data&#8230;</div>
+    <div id="pulse-content" style="display:none">
+      <div id="regime-badge" class="regime-badge regime-neutral">&#8212; Market Regime</div>
+      <div class="metrics-row" id="pulse-metrics"></div>
+      <p style="font-size:0.82rem;color:#6b7280" id="pulse-asof"></p>
+    </div>
+  </div>
+
+  <!-- Index Overview Section -->
+  <div class="section">
+    <div class="section-title">Public <span>Indexes</span></div>
+    <div class="two-col">
+
+      <div class="card" id="conservative-card">
+        <h3>&#128737;&#65039; Conservative Index</h3>
+        <p style="color:#6b7280;font-size:0.9rem;margin-bottom:16px">
+          Quality + value + low-volatility + income. 25 holdings, quarterly rebalance, half-Kelly weighting.
+        </p>
+        <div id="cons-metrics" class="metrics-row" style="grid-template-columns:1fr 1fr;gap:12px"></div>
+        <a href="conservative.html" style="display:inline-block;margin-top:16px;background:#1a2744;color:#fff;padding:8px 20px;border-radius:6px;text-decoration:none;font-size:0.88rem;font-weight:600">View Holdings &#8594;</a>
+      </div>
+
+      <div class="card" id="aggressive-card">
+        <h3>&#128640; Aggressive Index</h3>
+        <p style="color:#6b7280;font-size:0.9rem;margin-bottom:16px">
+          Momentum + growth + quality. 25 holdings, monthly rebalance, equal weighting.
+        </p>
+        <div id="agg-metrics" class="metrics-row" style="grid-template-columns:1fr 1fr;gap:12px"></div>
+        <a href="aggressive.html" style="display:inline-block;margin-top:16px;background:#1a2744;color:#fff;padding:8px 20px;border-radius:6px;text-decoration:none;font-size:0.88rem;font-weight:600">View Holdings &#8594;</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- How It Works -->
+  <div class="section">
+    <div class="section-title">How It <span>Works</span></div>
+    <div class="two-col">
+      <div class="card">
+        <h3>&#128202; Factor Models</h3>
+        <p style="color:#6b7280;font-size:0.9rem">Each index uses a multi-factor composite score covering quality, value, safety, growth, and momentum. Factors are scored cross-sectionally (ranked against all peers) and sector-neutralized to prevent hidden concentration.</p>
+      </div>
+      <div class="card">
+        <h3>&#128260; Rebalancing</h3>
+        <p style="color:#6b7280;font-size:0.9rem">The Conservative Index rebalances quarterly; the Aggressive Index monthly. Position sizing uses half-Kelly (Conservative) or equal weight (Aggressive) based on the risk profile of each strategy.</p>
+      </div>
+      <div class="card">
+        <h3>&#128240; Newsletter</h3>
+        <p style="color:#6b7280;font-size:0.9rem">A monthly PDF newsletter covers market conditions, index holdings, risk flags, stocks to watch, and the full methodology — published the first Sunday of each month.</p>
+      </div>
+      <div class="card">
+        <h3>&#128275; Open Data</h3>
+        <p style="color:#6b7280;font-size:0.9rem">All data comes from public sources: SEC EDGAR, Yahoo Finance, and the Federal Reserve (FRED). No proprietary data feeds. All weights updated weekly.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <strong>Horizon Ledger</strong> — Independent investment research<br>
+  Nothing on this site is financial advice. Past performance does not guarantee future results.<br>
+  Data from SEC EDGAR, Yahoo Finance, FRED. Updated weekly.<br>
+  <span id="footer-updated"></span>
+</footer>
+
+<script>
+const fmt = (v, pct=false, dec=1) => {
+  if (v === null || v === undefined) return '\u2014';
+  const n = parseFloat(v);
+  if (isNaN(n)) return '\u2014';
+  if (pct) return (n >= 0 ? '+' : '') + (n * 100).toFixed(dec) + '%';
+  return n.toFixed(dec);
+};
+const colorClass = (v, inverse=false) => {
+  if (v === null || v === undefined) return '';
+  const n = parseFloat(v);
+  if (isNaN(n)) return '';
+  const pos = inverse ? n < 0 : n > 0;
+  return pos ? 'green' : (n === 0 ? '' : 'red');
+};
+
+function metricCard(label, value, sub) {
+  sub = sub || '';
+  return '<div class="metric-card"><div class="label">' + label + '</div><div class="value">' + value + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+}
+
+async function loadData(url) {
+  try {
+    const r = await fetch(url + '?t=' + Date.now());
+    if (!r.ok) return null;
+    return r.json();
+  } catch (e) { return null; }
+}
+
+async function initPulse() {
+  const d = await loadData('data/market_pulse.json');
+  document.getElementById('pulse-loading').style.display = 'none';
+  const el = document.getElementById('pulse-content');
+  if (!d) {
+    el.innerHTML = '<p style="color:#6b7280">Market data unavailable. Check back after the next weekly update.</p>';
+    el.style.display = 'block';
+    return;
+  }
+  el.style.display = 'block';
+
+  const badge = document.getElementById('regime-badge');
+  const regime = (d.regime || '').toLowerCase();
+  badge.textContent = '\u25cf ' + (d.regime || 'Unknown') + ' Market Regime';
+  badge.className = 'regime-badge ' + (regime.includes('bull') ? 'regime-bull' : regime.includes('bear') ? 'regime-bear' : 'regime-neutral');
+
+  const score = d.market_health_score;
+  const scoreClass = score >= 65 ? 'green' : score >= 40 ? 'yellow' : 'red';
+  const pctFill = Math.round(Math.min(100, Math.max(0, score || 0)));
+
+  document.getElementById('pulse-metrics').innerHTML =
+    '<div class="metric-card"><div class="label">Health Score</div><div class="value ' + scoreClass + '">' + (score !== null ? Math.round(score) : '\u2014') + '/100</div><div class="pulse-bar"><div class="pulse-fill" style="width:' + pctFill + '%;background:var(--' + scoreClass + ')"></div></div></div>' +
+    metricCard('CAPE Ratio', fmt(d.cape_ratio, false, 1), d.cape_ratio > 30 ? '\u26a0 Elevated' : 'Fair value zone') +
+    metricCard('Yield Curve', fmt(d.yield_curve, false, 2) + '%', d.yield_curve < 0 ? '\u26a0 Inverted' : 'Normal') +
+    metricCard('VIX', fmt(d.vix, false, 1), d.vix > 25 ? '\u26a0 Elevated fear' : 'Low volatility') +
+    metricCard('% Above 200SMA', d.pct_above_200sma !== null ? fmt(d.pct_above_200sma) + '%' : '\u2014', 'Universe breadth');
+
+  document.getElementById('pulse-asof').textContent = 'Data as of: ' + (d.as_of || '\u2014');
+  document.getElementById('footer-updated').textContent = 'Last updated: ' + (d.as_of || '\u2014');
+}
+
+async function initIndexCards() {
+  const cons = await loadData('data/conservative.json');
+  const agg  = await loadData('data/aggressive.json');
+
+  if (cons && cons.performance) {
+    const p = cons.performance;
+    document.getElementById('cons-metrics').innerHTML =
+      metricCard('Annual Return', fmt(p.annual_return, true), 'vs benchmark ' + fmt(p.benchmark_return, true)) +
+      metricCard('Sharpe Ratio', fmt(p.sharpe_ratio, false, 2), '') +
+      metricCard('Max Drawdown', fmt(p.max_drawdown, true), '') +
+      metricCard('Holdings', cons.holdings_count || '25', 'Last rb: ' + (cons.last_rebalance || '\u2014'));
+  }
+
+  if (agg && agg.performance) {
+    const p = agg.performance;
+    document.getElementById('agg-metrics').innerHTML =
+      metricCard('Annual Return', fmt(p.annual_return, true), 'vs benchmark ' + fmt(p.benchmark_return, true)) +
+      metricCard('Sharpe Ratio', fmt(p.sharpe_ratio, false, 2), '') +
+      metricCard('Max Drawdown', fmt(p.max_drawdown, true), '') +
+      metricCard('Holdings', agg.holdings_count || '25', 'Last rb: ' + (agg.last_rebalance || '\u2014'));
+  }
+}
+
+initPulse();
+initIndexCards();
+</script>
+</body>
+</html>

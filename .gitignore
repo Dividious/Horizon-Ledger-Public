@@ -1,0 +1,10 @@
+﻿.venv/
+data/
+db/*.db
+secrets/
+__pycache__/
+*.pyc
+*.log
+*.parquet
+*.db-wal
+*.db-shm

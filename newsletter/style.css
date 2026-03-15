@@ -1,0 +1,38 @@
+/* Horizon Ledger Newsletter — Print-optimized stylesheet */
+@page { size: letter; margin: 0.75in 0.75in 0.75in 0.75in; }
+body { font-family: Georgia, 'Times New Roman', serif; font-size: 10pt; color: #1a1a1a; line-height: 1.5; }
+.header { background: #1a2744; color: white; padding: 24px 32px; margin: -0.75in -0.75in 24px -0.75in; }
+.header h1 { font-size: 28pt; margin: 0; letter-spacing: 2px; font-family: Arial, sans-serif; }
+.header .subtitle { font-size: 11pt; color: #a8bbd4; margin: 4px 0 0 0; }
+.issue-info { font-size: 9pt; color: #a8bbd4; margin-top: 8px; }
+.section { margin: 20px 0; page-break-inside: avoid; }
+.section-header { font-family: Arial, sans-serif; font-size: 14pt; font-weight: bold; color: #1a2744; border-bottom: 2px solid #1a2744; padding-bottom: 4px; margin-bottom: 12px; }
+.section-subheader { font-family: Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #2c4a7c; margin: 12px 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+.metric-row { display: flex; gap: 16px; margin: 8px 0; }
+.metric-box { background: #f0f4f8; border-radius: 4px; padding: 10px 14px; flex: 1; text-align: center; }
+.metric-box .value { font-size: 18pt; font-weight: bold; color: #1a2744; font-family: Arial, sans-serif; }
+.metric-box .label { font-size: 8pt; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+.health-score { font-size: 32pt; font-weight: bold; color: #1a2744; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 9pt; }
+th { background: #1a2744; color: white; padding: 6px 10px; text-align: left; font-family: Arial, sans-serif; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; }
+td { padding: 5px 10px; border-bottom: 1px solid #e8ecf0; }
+tr:nth-child(even) td { background: #f8f9fa; }
+.score-badge { background: #1a2744; color: white; border-radius: 12px; padding: 2px 8px; font-size: 8pt; font-weight: bold; display: inline-block; }
+.flag-box-ok { background: #d4edda; border: 1px solid #28a745; border-radius: 4px; padding: 12px 16px; color: #155724; }
+.flag-box-warning { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px 16px; }
+.flag-box-danger { background: #f8d7da; border: 1px solid #dc3545; border-radius: 4px; padding: 12px 16px; color: #721c24; }
+.flag-item { margin: 8px 0; padding-left: 20px; }
+.green { color: #28a745; font-weight: bold; }
+.red { color: #dc3545; font-weight: bold; }
+.orange { color: #fd7e14; font-weight: bold; }
+.blue { color: #007bff; }
+.gray { color: #6c757d; }
+.footer { border-top: 1px solid #ccc; margin-top: 24px; padding-top: 12px; font-size: 8pt; color: #888; font-style: italic; line-height: 1.6; }
+.disclaimer { background: #fff3cd; border-left: 3px solid #ffc107; padding: 8px 12px; font-size: 8pt; margin: 8px 0; }
+.two-col { display: flex; gap: 20px; }
+.col { flex: 1; }
+.event-item { padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
+.event-date { font-weight: bold; color: #1a2744; font-size: 8.5pt; }
+.event-name { font-weight: bold; }
+.event-why { color: #555; font-size: 8.5pt; }
+.breadcrumb { font-size: 8pt; color: #888; margin-bottom: 4px; }

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conservative Index — Horizon Ledger</title>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">Horizon <span>Ledger</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="conservative.html" class="active">Conservative</a></li>
+    <li><a href="aggressive.html">Aggressive</a></li>
+    <li><a href="about.html">Methodology</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+<div class="section">
+
+  <div class="index-header">
+    <h2>&#128737;&#65039; Conservative Index</h2>
+    <div>
+      <span class="tag">Quality + Value + Low-Vol + Income</span>
+      <span class="tag">25 Holdings</span>
+      <span class="tag">Quarterly Rebalance</span>
+      <span class="tag">Half-Kelly Sizing</span>
+    </div>
+    <p style="margin-top:14px;color:rgba(255,255,255,0.7);font-size:0.95rem">
+      Targets durable, financially sound companies with attractive valuations and growing dividends. Designed for lower volatility and consistent income.
+    </p>
+    <p style="margin-top:8px;font-size:0.8rem;color:rgba(255,255,255,0.45)">&#9888; Not financial advice — educational research only</p>
+  </div>
+
+  <div id="loading" class="loading">Loading index data&#8230;</div>
+  <div id="content" style="display:none">
+
+    <!-- Performance metrics -->
+    <div class="section-title">Performance <span>Metrics</span></div>
+    <div class="metrics-row" id="perf-metrics"></div>
+
+    <!-- Holdings table -->
+    <div class="section-title" style="margin-top:32px">Current <span>Holdings</span></div>
+    <p style="font-size:0.85rem;color:#6b7280;margin-bottom:16px" id="holdings-note"></p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Ticker</th>
+            <th>Company</th>
+            <th>Sector</th>
+            <th>Weight</th>
+            <th>Score</th>
+            <th>In Since</th>
+          </tr>
+        </thead>
+        <tbody id="holdings-body"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <div style="margin-top:40px;padding:20px;background:#eff6ff;border-left:4px solid #4a90d9;border-radius:0 8px 8px 0;font-size:0.88rem;color:#374151">
+    <strong>About this index:</strong> The Conservative Index uses 13 factor signals spanning quality (profitability, F-score), value (earnings yield, FCF yield, EV/EBITDA), safety (Altman Z, debt ratios), low-volatility (252-day realized volatility), and income (dividend yield, dividend growth). Position sizes use half-Kelly optimization. Sector weights capped at 25%.
+  </div>
+
+</div>
+</div>
+
+<footer>
+  <strong>Horizon Ledger</strong> — Independent investment research<br>
+  Nothing on this site is financial advice. Past performance does not guarantee future results.<br>
+  Data from SEC EDGAR, Yahoo Finance, FRED. Updated weekly.<br>
+  <span id="footer-updated"></span>
+</footer>
+
+<script>
+const fmt = (v, pct, dec) => {
+  pct = pct || false;
+  dec = (dec !== undefined) ? dec : 1;
+  if (v === null || v === undefined) return '\u2014';
+  const n = parseFloat(v);
+  if (isNaN(n)) return '\u2014';
+  if (pct) return (n >= 0 ? '+' : '') + (n * 100).toFixed(dec) + '%';
+  return n.toFixed(dec);
+};
+function metricCard(label, value, sub, cls) {
+  sub = sub || '';
+  cls = cls || '';
+  return '<div class="metric-card"><div class="label">' + label + '</div><div class="value ' + cls + '">' + value + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+}
+
+async function init() {
+  let d;
+  try {
+    const r = await fetch('data/conservative.json?t=' + Date.now());
+    d = await r.json();
+  } catch (e) { d = null; }
+
+  document.getElementById('loading').style.display = 'none';
+  const el = document.getElementById('content');
+
+  if (!d) {
+    el.innerHTML = '<p style="color:#6b7280">Index data unavailable. Check back after the weekly update.</p>';
+    el.style.display = 'block';
+    return;
+  }
+  el.style.display = 'block';
+
+  // Performance
+  const p = d.performance || {};
+  const ar = p.annual_return;
+  document.getElementById('perf-metrics').innerHTML =
+    metricCard('Annual Return', fmt(ar, true), 'vs S&amp;P 500: ' + fmt(p.benchmark_return, true), ar > 0 ? 'green' : 'red') +
+    metricCard('Alpha', fmt(p.alpha, true), 'Risk-adjusted excess return', p.alpha > 0 ? 'green' : 'red') +
+    metricCard('Sharpe Ratio', fmt(p.sharpe_ratio, false, 2), 'Risk-adjusted return') +
+    metricCard('Max Drawdown', fmt(p.max_drawdown, true), 'Peak to trough', 'red') +
+    metricCard('Beta', fmt(p.beta, false, 2), 'Market sensitivity');
+
+  // Holdings
+  const holdings = d.holdings || [];
+  document.getElementById('holdings-note').textContent =
+    holdings.length + ' holdings as of ' + (d.as_of || '\u2014') + '. Last rebalance: ' + (d.last_rebalance || '\u2014') + '.';
+
+  const rows = holdings.map(function(h, i) {
+    return '<tr>' +
+      '<td style="color:#9ca3af;font-size:0.82rem">' + (i + 1) + '</td>' +
+      '<td class="ticker-cell">' + h.ticker + '</td>' +
+      '<td>' + (h.name || h.ticker) + '</td>' +
+      '<td><span class="sector-badge">' + (h.sector || 'Unknown') + '</span></td>' +
+      '<td>' + (h.weight !== null && h.weight !== undefined ? (h.weight * 100).toFixed(1) + '%' : '\u2014') + '</td>' +
+      '<td>' + (h.score !== null && h.score !== undefined ? Math.round(h.score) : '\u2014') + '</td>' +
+      '<td style="font-size:0.82rem;color:#6b7280">' + (h.since || '\u2014') + '</td>' +
+      '</tr>';
+  });
+  document.getElementById('holdings-body').innerHTML = rows.join('');
+
+  document.getElementById('footer-updated').textContent = 'Last updated: ' + (d.as_of || '\u2014');
+}
+
+init();
+</script>
+</body>
+</html>

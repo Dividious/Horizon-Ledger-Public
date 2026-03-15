@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Methodology — Horizon Ledger</title>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">Horizon <span>Ledger</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="conservative.html">Conservative</a></li>
+    <li><a href="aggressive.html">Aggressive</a></li>
+    <li><a href="about.html" class="active">Methodology</a></li>
+  </ul>
+</nav>
+
+<div class="hero" style="padding:48px 24px 40px">
+  <h1 style="font-size:1.9rem">Methodology</h1>
+  <p>How Horizon Ledger builds, scores, and maintains its indexes.</p>
+  <div class="disclaimer">&#9888; Not financial advice — educational research only</div>
+</div>
+
+<div class="container">
+<div class="section">
+<div class="about-section">
+
+  <div class="callout">
+    <strong>Disclaimer:</strong> Horizon Ledger is an independent research project for educational purposes. Nothing here constitutes investment advice. All indexes are paper/simulated portfolios. Past performance does not guarantee future results. Always consult a qualified financial professional before making investment decisions.
+  </div>
+
+  <h2>Overview</h2>
+  <p>Horizon Ledger is a local investment research system that uses publicly available data — SEC EDGAR filings, Yahoo Finance prices, and Federal Reserve (FRED) macro indicators — to build systematic factor models. No proprietary data, no paid feeds.</p>
+  <p>Two public-facing indexes are maintained: a <strong>Conservative Index</strong> targeting quality, value, and income; and an <strong>Aggressive Index</strong> targeting momentum and growth.</p>
+
+  <h2>Data Sources</h2>
+  <ul>
+    <li><strong>Prices &amp; market cap:</strong> Yahoo Finance (yfinance) — adjusted close prices, 5-year history</li>
+    <li><strong>Fundamentals:</strong> SEC EDGAR XBRL bulk data — revenue, earnings, assets, debt, dividends, shares outstanding. A mandatory 45-day lag from fiscal quarter-end is applied before any fundamental is used, to prevent look-ahead bias.</li>
+    <li><strong>Macro indicators:</strong> FRED API — 10-year Treasury yield, 2-year yield, VIX, HY credit spread, CPI, Sahm Rule, TIPS breakeven inflation</li>
+    <li><strong>Shiller CAPE:</strong> Yale CAPE monthly data for long-term valuation context</li>
+  </ul>
+
+  <h2>Universe Construction</h2>
+  <p>The stock universe starts with S&amp;P 500 constituents and expands to include stocks meeting these minimum criteria:</p>
+  <ul>
+    <li>Market cap &#8805; $100 million</li>
+    <li>Average daily volume &#8805; $1 million notional (20-day)</li>
+    <li>Listed for at least 365 days (survivorship bias control)</li>
+  </ul>
+  <p>Delisted tickers are tracked and excluded from prospective scoring (no survivorship bias). Stocks with significant data gaps receive neutral (50th percentile) fills for missing factors rather than being dropped entirely.</p>
+
+  <h2>Conservative Index — Factors</h2>
+  <p>13 factors across five categories, sector-neutralized:</p>
+  <ul>
+    <li><strong>Quality (23%):</strong> Gross Profitability (Novy-Marx 2013), ROIC, Piotroski F-Score (Piotroski 2000), Altman Z-Score (normalized)</li>
+    <li><strong>Value (25%):</strong> Earnings Yield (EBIT/EV), FCF Yield, EV/EBITDA (inverted)</li>
+    <li><strong>Safety (8%):</strong> Debt-to-Equity (inverted), Current Ratio</li>
+    <li><strong>Low Volatility (12%):</strong> 252-day realized volatility (inverted) — Blitz &amp; van Vliet (2007)</li>
+    <li><strong>Income (15%):</strong> Dividend Yield, 5-year Dividend Growth, Consecutive Increase Streak</li>
+  </ul>
+  <p>Hard exclusions: Altman Z &lt; 1.81 (distress zone), annualized volatility &gt; 45%, market cap &lt; $5B.</p>
+  <p><strong>Position sizing:</strong> Half-Kelly optimization — w_i &#8733; 0.5 &#215; (score_i / volatility_i&#178;). Achieves approximately 75% of optimal growth at 50% of Kelly volatility.</p>
+
+  <h2>Aggressive Index — Factors</h2>
+  <p>11 factors across four categories, sector-neutralized:</p>
+  <ul>
+    <li><strong>Momentum (35%):</strong> 12-month price momentum (skip-1-month, Jegadeesh &amp; Titman 1993), 6-month momentum, sector momentum</li>
+    <li><strong>Growth (30%):</strong> Revenue CAGR (5-year), Earnings CAGR (5-year), Revenue Trajectory</li>
+    <li><strong>Quality (25%):</strong> Gross Profitability, ROIC, Piotroski F-Score</li>
+    <li><strong>Technical (10%):</strong> RSI signal, Volume Confirmation</li>
+  </ul>
+  <p>Hard exclusions: Altman Z &lt; 1.81, revenue YoY decline &gt; 20%.</p>
+  <p><strong>Position sizing:</strong> Equal weight (1/N) — simpler, avoids estimation error in high-turnover strategies.</p>
+
+  <h2>Scoring Process</h2>
+  <ol style="padding-left:22px">
+    <li style="margin-bottom:8px"><strong>Raw factor computation</strong> — point-in-time fundamentals and prices for each stock</li>
+    <li style="margin-bottom:8px"><strong>Cross-sectional percentile rank</strong> — each factor ranked 0–100 across all universe stocks</li>
+    <li style="margin-bottom:8px"><strong>Sector neutralization</strong> — z-score within GICS sector, then re-rank cross-sectionally. Prevents hidden sector tilts.</li>
+    <li style="margin-bottom:8px"><strong>Weighted composite score</strong> — factor percentiles combined by strategy weights</li>
+    <li style="margin-bottom:8px"><strong>Risk overlay</strong> — hard exclusions applied (Altman Z, vol, revenue decline)</li>
+    <li style="margin-bottom:8px"><strong>Rank and select top 25</strong></li>
+  </ol>
+
+  <h2>Rebalancing</h2>
+  <ul>
+    <li><strong>Conservative:</strong> Quarterly (Jan, Apr, Jul, Oct). Buffer zone: stocks exit only when rank falls below 35th position (40% buffer) to reduce turnover.</li>
+    <li><strong>Aggressive:</strong> Monthly. Tighter buffer (rank &gt; 35) given higher expected turnover in momentum strategies.</li>
+    <li>5% drift threshold triggers a rebalance flag between scheduled dates.</li>
+  </ul>
+
+  <h2>Market Regime Detection</h2>
+  <p>A Hidden Markov Model (HMM) classifies the market into three regimes — Bull, Neutral, and Bear — using VIX, yield curve, price momentum, and breadth signals. The regime does not directly modify factor weights but provides context for the Market Pulse and newsletter commentary.</p>
+
+  <h2>Information Coefficient Tracking</h2>
+  <p>After 60+ weekly predictions accumulate, the system computes Spearman rank correlation (IC) between each factor's score and realized 63-day forward returns. Factors with IC &lt; 0.01 are flagged for review. IC Information Ratio (mean IC / std IC) above 0.5 indicates consistent predictive power. This is used to validate and optionally adjust factor weights over time.</p>
+
+  <h2>What This Is Not</h2>
+  <ul>
+    <li>Not a live brokerage or trading system — all portfolios are paper/simulated</li>
+    <li>Not backtested to prove profitability — historical performance is live tracking from the start date, not a backtest</li>
+    <li>Not optimized to show good numbers — factor weights are set from academic literature and fixed until IC tracking provides sufficient evidence to update them</li>
+    <li>Not financial advice of any kind</li>
+  </ul>
+
+  <div class="callout" style="margin-top:32px">
+    <strong>Academic references:</strong> Novy-Marx (2013) gross profitability; Piotroski (2000) F-Score; Altman (1968) Z-Score; Jegadeesh &amp; Titman (1993) momentum; Blitz &amp; van Vliet (2007) low volatility; Grinold &amp; Kahn (2000) IC/Information Ratio; McLean &amp; Pontiff (2016) factor decay; Harvey, Liu &amp; Zhu (2016) multiple testing in finance.
+  </div>
+
+</div>
+</div>
+</div>
+
+<footer>
+  <strong>Horizon Ledger</strong> — Independent investment research<br>
+  Nothing on this site is financial advice. Past performance does not guarantee future results.<br>
+  Data from SEC EDGAR, Yahoo Finance, FRED. Updated weekly.
+</footer>
+
+</body>
+</html>
